@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/Marketen/lido-index/internal/adapters/api"
 	"github.com/Marketen/lido-index/internal/adapters/storage"
 	"github.com/Marketen/lido-index/internal/core/services"
@@ -8,11 +10,11 @@ import (
 )
 
 func main() {
-    // Initialize infrastructure
+    // Initialize infrastructure. These are adapters.
     ethereumWatcher := blockchain.NewEthereumWatcher() // Assume constructor for Ethereum watcher
     jsonRepo := storage.NewJSONRepository("path_to_json_storage.json")
 
-    // Initialize core services
+    // Initialize core services.
     eventFetcher := services.NewBlockchainEventFetcher(ethereumWatcher)
     eventService := services.NewEventService(jsonRepo)
 
@@ -30,5 +32,5 @@ func main() {
 
     // Setup and start the HTTP server
     router := api.SetupRouter(eventService)
-    router.Run(":8080") // Run HTTP server
+    http.ListenAndServe(":8080", router) // Run HTTP server
 }
