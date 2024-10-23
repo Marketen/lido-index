@@ -1,41 +1,45 @@
-// eventservice.go
 package services
 
 import (
-	"github.com/Marketen/lido-index/internal/core/domain"
+	"log"
+
 	"github.com/Marketen/lido-index/internal/core/ports"
 )
 
+// EventService implements the business logic for event handling.
 type EventService struct {
-	repo ports.EventRepository
+    fetcher ports.EventFetcher  // Port for fetching events
+    storer  ports.EventStore    // Port for storing events
 }
 
-// // Retrieve implements ports.EventRepository.
-// func (es *EventService) Retrieve(id string) (domain.Event, error) {
-// 	panic("unimplemented")
-// }
-
-// // RetrieveAll implements ports.EventRepository.
-// func (es *EventService) RetrieveAll() ([]domain.Event, error) {
-// 	panic("unimplemented")
-// }
-
-// // Save implements ports.EventRepository.
-// func (es *EventService) Save(event domain.Event) error {
-// 	panic("unimplemented")
-// }
-
-func NewEventService(repo ports.EventRepository) *EventService {
-	return &EventService{repo: repo}
+// NewEventService creates a new instance of EventService with necessary dependencies.
+// Whatever is passed as fetcher and storer must implement the EventFetcher and EventStore interfaces respectively.
+func NewEventService(fetcher ports.EventFetcher, storer ports.EventStore) *EventService {
+    return &EventService{
+        fetcher: fetcher,
+        storer:  storer,
+    }
 }
 
-func (es *EventService) ProcessAndStoreEvents(events []domain.Event) error {
-	for _, event := range events {
-		// Add processing logic if needed
-		err := es.repo.Save(event)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+// ProcessEvents handles the fetching and storing of events.
+func (es *EventService) ProcessEvents() error {
+    events, err := es.fetcher.FetchEvents()
+    if err != nil {
+        log.Printf("Error fetching events: %v", err)
+        return err
+    }
+
+    if len(events) == 0 {
+        log.Println("No events found to process.")
+        return nil
+    }
+
+    err = es.storer.SaveEvents(events)
+    if err != nil {
+        log.Printf("Error storing events: %v", err)
+        return err
+    }
+
+    log.Printf("Successfully processed %d events.", len(events))
+    return nil
 }
